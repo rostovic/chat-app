@@ -15,7 +15,7 @@ export const appRouter = t.router({
     return observable<{ randomNumber: number }>((emit) => {
       const timer = setInterval(() => {
         emit.next({ randomNumber: Math.random() });
-      }, 200);
+      }, 1000);
 
       return () => {
         clearInterval(timer);
