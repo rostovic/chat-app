@@ -1,23 +1,26 @@
-// src/App.tsx
-import React, { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { httpBatchLink } from "@trpc/client";
+import { useState } from "react";
 import { trpc } from "./trpc";
+import IndexPage from "./pages/IndexPage";
 
-const App: React.FC = () => {
-  const [name, setName] = useState("");
-
-  const { data, refetch } = trpc.hello.useQuery({ name }, { enabled: false });
+export default function App() {
+  const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: "http://localhost:5000/",
+        }),
+      ],
+    })
+  );
 
   return (
-    <div>
-      <h1>{data ? data.message : "Enter your name"}</h1>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Enter your name"
-      />
-      <button onClick={() => refetch()}>Say Hello</button>
-    </div>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <IndexPage />
+      </QueryClientProvider>
+    </trpc.Provider>
   );
-};
-
-export default App;
+}
