@@ -1,23 +1,38 @@
-import { useState } from "react";
 import { trpc } from "../trpc";
+import TextBox from "../components/TextBox";
 
-export default function IndexPage() {
-  const [count, setCount] = useState(0);
-
-  trpc.randomNumber.useSubscription(undefined, {
-    onData({ randomNumber }) {
-      setCount((prev) => prev + 1);
-      console.log(randomNumber);
-    },
-    enabled: count < 3,
-  });
-  const userQuery = trpc.hello.useQuery({ name: "kek" });
+const IndexPage = () => {
+  trpc.onMessage.useSubscription(
+    { roomId: "1" },
+    {
+      onData: (data) => {
+        console.log(data);
+      },
+    }
+  );
 
   return (
-    <div>
-      <p>{userQuery.data?.message}</p>
-      <p>Count: {count}</p>
-      <button>Create Frodo</button>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          height: "600px",
+          width: "30%",
+          border: "2px solid black",
+        }}
+      >
+        <div style={{ height: "95%" }}></div>
+        <TextBox roomId={"1"} />
+      </div>
     </div>
   );
-}
+};
+
+export default IndexPage;
