@@ -1,12 +1,19 @@
 import { trpc } from "../trpc";
 import TextBox from "../components/TextBox";
+import { useEffect } from "react";
+const ROOM_ID = "1";
 
 const IndexPage = () => {
+  useEffect(() => {
+    document.title = "Anonymous";
+  }, []);
   trpc.onMessage.useSubscription(
-    { roomId: "1" },
+    { roomId: ROOM_ID },
     {
       onData: (data) => {
-        console.log(data);
+        if (data.action === "CHANGE_NICKNAME") {
+          document.title = data.payload;
+        }
       },
     }
   );
@@ -29,7 +36,7 @@ const IndexPage = () => {
         }}
       >
         <div style={{ height: "95%" }}></div>
-        <TextBox roomId={"1"} />
+        <TextBox roomId={ROOM_ID} />
       </div>
     </div>
   );

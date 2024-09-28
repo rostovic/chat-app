@@ -1,6 +1,12 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import { observable, Observer } from "@trpc/server/observable";
-import { z } from "zod";
+import { string, z } from "zod";
+
+type ActionType =
+  | "CHANGE_NICKNAME"
+  | "CHANGE_STYLING"
+  | "DELETE_LAST_MESSAGE"
+  | "DISPLAY_MESSAGE";
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
@@ -9,7 +15,8 @@ const roomEmits = new Map<
   string,
   Observer<
     {
-      message: string;
+      action: ActionType;
+      payload: string;
     },
     unknown
   >[]
@@ -25,13 +32,42 @@ export const appRouter = t.router({
     )
     .mutation(({ input }) => {
       const { roomId, message } = input;
+      let action: ActionType = "DISPLAY_MESSAGE";
+      let payload: string = message;
+      // pogledam message
+      if (message.startsWith("/")) {
+        const splitAction = message
+          .split(" ")
+          .filter((element) => element !== "");
+
+        switch (splitAction[0]) {
+          case "/nick":
+            action = "CHANGE_NICKNAME";
+            splitAction.shift();
+            payload = splitAction.join(" ");
+            if (!payload) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Can not enter empty nickname!",
+              });
+            }
+            break;
+          case "/think":
+            action = "CHANGE_STYLING";
+            break;
+          case "/oops":
+            action = "DELETE_LAST_MESSAGE";
+            break;
+        }
+      }
+      // postavim action
 
       const roomEmitArray = roomEmits.get(roomId);
 
       if (roomEmitArray) {
         roomEmitArray.forEach((emit) => {
           try {
-            emit.next({ message });
+            emit.next({ payload, action });
           } catch (error) {
             console.log(error);
           }
@@ -56,7 +92,7 @@ export const appRouter = t.router({
       //   );
       // }
 
-      return observable<{ message: string }>((emit) => {
+      return observable<{ payload: string; action: ActionType }>((emit) => {
         const userEmitsArray = roomEmits.get(roomId);
         if (userEmitsArray) {
           userEmitsArray.push(emit);
