@@ -9,7 +9,9 @@ export default function App() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <IndexPage />
+        <div id="app-container">
+          <IndexPage />
+        </div>
       </QueryClientProvider>
     </trpc.Provider>
   );
