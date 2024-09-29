@@ -4,7 +4,7 @@ import { string, z } from "zod";
 
 type ActionType =
   | "CHANGE_NICKNAME"
-  | "CHANGE_STYLING"
+  | "SPECIAL_STYLING"
   | "DELETE_LAST_MESSAGE"
   | "DISPLAY_MESSAGE";
 
@@ -17,6 +17,7 @@ const roomEmits = new Map<
     {
       action: ActionType;
       payload: string;
+      userId: string;
     },
     unknown
   >[]
@@ -28,13 +29,13 @@ export const appRouter = t.router({
       z.object({
         roomId: z.string(),
         message: z.string(),
+        userId: z.string(),
       })
     )
     .mutation(({ input }) => {
-      const { roomId, message } = input;
+      const { roomId, message, userId } = input;
       let action: ActionType = "DISPLAY_MESSAGE";
       let payload: string = message;
-      // pogledam message
       if (message.startsWith("/")) {
         const splitAction = message
           .split(" ")
@@ -53,7 +54,9 @@ export const appRouter = t.router({
             }
             break;
           case "/think":
-            action = "CHANGE_STYLING";
+            action = "SPECIAL_STYLING";
+            splitAction.shift();
+            payload = splitAction.join(" ");
             break;
           case "/oops":
             action = "DELETE_LAST_MESSAGE";
@@ -67,7 +70,7 @@ export const appRouter = t.router({
       if (roomEmitArray) {
         roomEmitArray.forEach((emit) => {
           try {
-            emit.next({ payload, action });
+            emit.next({ payload, action, userId });
           } catch (error) {
             console.log(error);
           }
@@ -92,7 +95,11 @@ export const appRouter = t.router({
       //   );
       // }
 
-      return observable<{ payload: string; action: ActionType }>((emit) => {
+      return observable<{
+        payload: string;
+        action: ActionType;
+        userId: string;
+      }>((emit) => {
         const userEmitsArray = roomEmits.get(roomId);
         if (userEmitsArray) {
           userEmitsArray.push(emit);
