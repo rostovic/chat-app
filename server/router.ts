@@ -1,26 +1,30 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { observable, Observer } from "@trpc/server/observable";
-import { string, z } from "zod";
+import { z } from "zod";
 
 type ActionType =
   | "CHANGE_NICKNAME"
   | "SPECIAL_STYLING"
   | "DELETE_LAST_MESSAGE"
-  | "DISPLAY_MESSAGE";
+  | "DISPLAY_MESSAGE"
+  | "USER_CURRENTLY_TYPING";
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 const roomEmits = new Map<
   string,
-  Observer<
-    {
-      action: ActionType;
-      payload: string;
-      userId: string;
-    },
-    unknown
-  >[]
+  {
+    emit: Observer<
+      {
+        action: ActionType;
+        payload: string;
+        userId: string;
+      },
+      unknown
+    >;
+    userId: string;
+  }[]
 >();
 
 export const appRouter = t.router({
@@ -36,6 +40,7 @@ export const appRouter = t.router({
       const { roomId, message, userId } = input;
       let action: ActionType = "DISPLAY_MESSAGE";
       let payload: string = message;
+      let roomEmitsArray = roomEmits.get(roomId);
       if (message.startsWith("/")) {
         const splitAction = message
           .split(" ")
@@ -61,16 +66,19 @@ export const appRouter = t.router({
           case "/oops":
             action = "DELETE_LAST_MESSAGE";
             break;
+          case "/typing":
+            action = "USER_CURRENTLY_TYPING";
+            roomEmitsArray = roomEmitsArray?.filter(
+              (roomEmit) => roomEmit.userId !== userId
+            );
+            break;
         }
       }
-      // postavim action
 
-      const roomEmitArray = roomEmits.get(roomId);
-
-      if (roomEmitArray) {
-        roomEmitArray.forEach((emit) => {
+      if (roomEmitsArray) {
+        roomEmitsArray.forEach((emitData) => {
           try {
-            emit.next({ payload, action, userId });
+            emitData.emit.next({ payload, action, userId });
           } catch (error) {
             console.log(error);
           }
@@ -81,9 +89,9 @@ export const appRouter = t.router({
     }),
 
   onMessage: publicProcedure
-    .input(z.object({ roomId: z.string() }))
+    .input(z.object({ roomId: z.string(), userId: z.string() }))
     .subscription(({ input }) => {
-      const { roomId } = input;
+      const { roomId, userId } = input;
 
       // if (connectedUsers.size >= MAX_USERS) {
       //   throw new Error("The chat is full. Only 2 users are allowed.");
@@ -100,20 +108,20 @@ export const appRouter = t.router({
         action: ActionType;
         userId: string;
       }>((emit) => {
-        const userEmitsArray = roomEmits.get(roomId);
-        if (userEmitsArray) {
-          userEmitsArray.push(emit);
+        const roomEmitsArray = roomEmits.get(roomId);
+        if (roomEmitsArray) {
+          roomEmitsArray.push({ emit, userId });
         } else {
-          roomEmits.set(roomId, [emit]);
+          roomEmits.set(roomId, [{ emit, userId }]);
         }
         console.log(`${roomId} connected.`);
 
         return () => {
-          if (userEmitsArray) {
-            const newUserEmits = userEmitsArray.filter(
-              (userEmit) => userEmit !== emit
+          if (roomEmitsArray) {
+            const newRoomEmits = roomEmitsArray.filter(
+              (roomEmit) => roomEmit.emit !== emit
             );
-            roomEmits.set(roomId, newUserEmits);
+            roomEmits.set(roomId, newRoomEmits);
           }
           // roomEmits.delete(roomId);
           console.log(`User disconnected from room ${roomId}.`);

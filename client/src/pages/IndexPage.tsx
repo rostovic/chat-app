@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { trpc } from "../trpc";
 import TextBox from "../components/TextBox";
+import notificationSound from "../assets/audio/notification.wav";
 const ROOM_ID = "1";
 
 const getRandomInt = (min: number, max: number) => {
@@ -23,9 +24,12 @@ const IndexPage = () => {
   >([]);
   const [userId] = useState(Math.random().toString());
   const scrollViewRef = useRef<HTMLDivElement | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [userTyping, setUserTyping] = useState<string | null>(null);
+  const audio = new Audio(notificationSound);
 
   trpc.onMessage.useSubscription(
-    { roomId: ROOM_ID },
+    { roomId: ROOM_ID, userId },
     {
       onData: (data) => {
         console.log(data);
@@ -34,15 +38,19 @@ const IndexPage = () => {
           data.action === "SPECIAL_STYLING"
         ) {
           const color = generateRgbColor(50, 255);
+          const modifiedMessage = data.payload
+            .replaceAll(":)", "😊")
+            .replaceAll(";)", "😉");
           setMessagesArray((prevMessagesArray) => [
             ...prevMessagesArray,
             {
               userId: data.userId,
-              message: data.payload,
+              message: modifiedMessage,
               isThink: data.action === "SPECIAL_STYLING",
               color: data.action === "SPECIAL_STYLING" ? color : undefined,
             },
           ]);
+          audio.play();
         }
 
         if (data.action === "CHANGE_NICKNAME" && data.userId !== userId) {
@@ -58,6 +66,20 @@ const IndexPage = () => {
               setMessagesArray(newMessageArray);
               break;
             }
+          }
+        }
+
+        if (data.action === "USER_CURRENTLY_TYPING") {
+          setUserTyping(data.userId);
+          if (!timerRef.current) {
+            timerRef.current = setTimeout(() => {
+              setUserTyping(null);
+            }, 2000);
+          } else {
+            clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+              setUserTyping(null);
+            }, 2000);
           }
         }
       },
@@ -98,19 +120,8 @@ const IndexPage = () => {
         >
           {showMessages()}
         </div>
+        {userTyping ? <p>{document.title} is typing...</p> : null}
         <TextBox roomId={ROOM_ID} userId={userId} />
-        {/* <button
-          onClick={() => {
-            if (scrollViewRef.current) {
-              scrollViewRef.current.scrollTo({
-                top: scrollViewRef.current.scrollHeight,
-                behavior: "smooth",
-              });
-            }
-          }}
-        >
-          Scroll
-        </button> */}
       </div>
     </div>
   );
