@@ -18,7 +18,11 @@ const generateRgbColor = (min: number, max: number) => {
   )}, ${getRandomInt(min, max)})`;
 };
 
-const IndexPage = () => {
+const IndexPage = ({
+  setTheme,
+}: {
+  setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
+}) => {
   const [messagesArray, setMessagesArray] = useState<
     { userId: string; message: string; isThink: boolean; color?: string }[]
   >([]);
@@ -155,16 +159,16 @@ const IndexPage = () => {
       return;
     }
     return (
-      <h1 className="text-white font-bold text-3xl">
+      <h1 className="font-bold text-3xl text-slate-900 dark:text-gray-50">
         Countdown: {countDown.timer}
       </h1>
     );
   };
 
   return (
-    <div className="flex flex-1 flex-col justify-center items-center bg-stone-600 gap-4">
+    <div className="flex flex-1 flex-col justify-center items-center gap-4 bg-gray-50 dark:bg-slate-700">
       {showCountdown()}
-      <div className="flex flex-col justify-end h-[600px] w-[40%] bg-gray-100">
+      <div className="flex flex-col justify-end h-[600px] w-[40%] bg-gray-200 dark:bg-slate-900">
         <div
           className="flex flex-col p-1 gap-1 overflow-y-scroll"
           ref={scrollViewRef}
@@ -172,7 +176,7 @@ const IndexPage = () => {
           {showMessages()}
         </div>
         {userTyping ? <p>{document.title} is typing...</p> : null}
-        <TextBox roomId={ROOM_ID} userId={userId} />
+        <TextBox roomId={ROOM_ID} userId={userId} setTheme={setTheme} />
       </div>
     </div>
   );

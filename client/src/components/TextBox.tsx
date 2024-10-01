@@ -4,23 +4,39 @@ import { trpc } from "../trpc";
 
 const DELAY = 2000;
 
-const TextBox = ({ roomId, userId }: { roomId: string; userId: string }) => {
+const TextBox = ({
+  roomId,
+  userId,
+  setTheme,
+}: {
+  roomId: string;
+  userId: string;
+  setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
+}) => {
   const messageMutation = trpc.sendMessage.useMutation();
   const inputRef = useRef<HTMLInputElement>(null);
   const text = useRef("");
   const lastSent = useRef<number>(0);
 
   const sendMessage = () => {
-    messageMutation.mutate({
-      message: text.current,
-      roomId,
-      userId,
-    });
-
+    const message = text.current;
     if (inputRef.current) {
       inputRef.current.value = "";
       text.current = "";
     }
+
+    if (message === "/light") {
+      setTheme("light");
+      return;
+    } else if (message === "/dark") {
+      setTheme("dark");
+      return;
+    }
+    messageMutation.mutate({
+      message,
+      roomId,
+      userId,
+    });
   };
 
   return (
