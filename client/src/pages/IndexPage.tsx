@@ -25,8 +25,10 @@ const IndexPage = () => {
   const [userId] = useState(Math.random().toString());
   const scrollViewRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const countDownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [userTyping, setUserTyping] = useState<string | null>(null);
   const audio = new Audio(notificationSound);
+  const [countDown, setCountdown] = useState({ timer: 0, url: "" });
 
   trpc.onMessage.useSubscription(
     { roomId: ROOM_ID, userId },
@@ -38,7 +40,7 @@ const IndexPage = () => {
           data.action === "SPECIAL_STYLING"
         ) {
           const color = generateRgbColor(50, 255);
-          const modifiedMessage = data.payload
+          const modifiedMessage = (data.payload as string)
             .replaceAll(":)", "😊")
             .replaceAll(";)", "😉");
           setMessagesArray((prevMessagesArray) => [
@@ -54,7 +56,7 @@ const IndexPage = () => {
         }
 
         if (data.action === "CHANGE_NICKNAME" && data.userId !== userId) {
-          document.title = data.payload;
+          document.title = data.payload as string;
         }
 
         if (data.action === "DELETE_LAST_MESSAGE") {
@@ -69,6 +71,19 @@ const IndexPage = () => {
           }
         }
 
+        if (data.action === "EDIT_LAST_MESSAGE") {
+          const newMessageArray = [...messagesArray];
+
+          for (let i = newMessageArray.length - 1; i >= 0; i--) {
+            if (newMessageArray[i].userId === data.userId) {
+              newMessageArray[i].message = data.payload + " (edited)";
+              break;
+            }
+          }
+
+          setMessagesArray(newMessageArray);
+        }
+
         if (data.action === "USER_CURRENTLY_TYPING") {
           setUserTyping(data.userId);
           if (!timerRef.current) {
@@ -81,6 +96,30 @@ const IndexPage = () => {
               setUserTyping(null);
             }, 2000);
           }
+        }
+
+        if (data.action === "COUNTDOWN_URL") {
+          if (countDownTimerRef.current) {
+            clearTimeout(countDownTimerRef.current);
+          }
+          setCountdown({
+            timer: (data.payload as { timer: number; url: string }).timer,
+            url: (data.payload as { timer: number; url: string }).url,
+          });
+          countDownTimerRef.current = setInterval(() => {
+            setCountdown((prev) => {
+              const newTime = prev.timer - 1;
+              if (newTime <= 0) {
+                window.open(prev.url, "_blank")?.focus();
+                console.log(userId);
+                if (countDownTimerRef.current) {
+                  clearTimeout(countDownTimerRef.current);
+                }
+                return { timer: 0, url: "" };
+              }
+              return { ...prev, timer: newTime };
+            });
+          }, 1000);
         }
       },
     }
@@ -111,8 +150,20 @@ const IndexPage = () => {
     ));
   };
 
+  const showCountdown = () => {
+    if (countDown === null) {
+      return;
+    }
+    return (
+      <h1 className="text-white font-bold text-3xl">
+        Countdown: {countDown.timer}
+      </h1>
+    );
+  };
+
   return (
-    <div className="flex flex-1 flex-col justify-center items-center bg-stone-600">
+    <div className="flex flex-1 flex-col justify-center items-center bg-stone-600 gap-4">
+      {showCountdown()}
       <div className="flex flex-col justify-end h-[600px] w-[40%] bg-gray-100">
         <div
           className="flex flex-col p-1 gap-1 overflow-y-scroll"

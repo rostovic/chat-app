@@ -7,10 +7,23 @@ type ActionType =
   | "SPECIAL_STYLING"
   | "DELETE_LAST_MESSAGE"
   | "DISPLAY_MESSAGE"
-  | "USER_CURRENTLY_TYPING";
+  | "USER_CURRENTLY_TYPING"
+  | "EDIT_LAST_MESSAGE"
+  | "COUNTDOWN_URL";
+
+type PayloadType = { timer: number; url: string } | string;
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
+
+const isValidUrl = (url: string) => {
+  try {
+    new URL(url);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
 
 const roomEmits = new Map<
   string,
@@ -18,7 +31,7 @@ const roomEmits = new Map<
     emit: Observer<
       {
         action: ActionType;
-        payload: string;
+        payload: PayloadType;
         userId: string;
       },
       unknown
@@ -39,7 +52,7 @@ export const appRouter = t.router({
     .mutation(({ input }) => {
       const { roomId, message, userId } = input;
       let action: ActionType = "DISPLAY_MESSAGE";
-      let payload: string = message;
+      let payload: PayloadType = message;
       let roomEmitsArray = roomEmits.get(roomId);
       if (message.startsWith("/")) {
         const splitAction = message
@@ -71,6 +84,40 @@ export const appRouter = t.router({
             roomEmitsArray = roomEmitsArray?.filter(
               (roomEmit) => roomEmit.userId !== userId
             );
+            break;
+          case "/edit":
+            action = "EDIT_LAST_MESSAGE";
+            splitAction.shift();
+            payload = splitAction.join(" ");
+            console.log(payload);
+            if (!payload) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message:
+                  "You need to enter text in order to replace your last message!",
+              });
+            }
+            break;
+
+          case "/countdown":
+            action = "COUNTDOWN_URL";
+            if (!Number.isInteger(+splitAction[1])) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Enter a valid integer number",
+              });
+            }
+            if (!isValidUrl(splitAction[2])) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Enter a valid url!",
+              });
+            }
+            roomEmitsArray = roomEmitsArray?.filter(
+              (roomEmit) => roomEmit.userId !== userId
+            );
+            splitAction.shift();
+            payload = { timer: +splitAction[0], url: splitAction[1] };
             break;
         }
       }
@@ -104,7 +151,7 @@ export const appRouter = t.router({
       // }
 
       return observable<{
-        payload: string;
+        payload: PayloadType;
         action: ActionType;
         userId: string;
       }>((emit) => {
