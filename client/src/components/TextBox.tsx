@@ -16,7 +16,7 @@ const TextBox = ({
   const messageMutation = trpc.sendMessage.useMutation();
   const inputRef = useRef<HTMLInputElement>(null);
   const text = useRef("");
-  const lastSent = useRef<number>(0);
+  const lastInputChangeTimestamp = useRef<number>(0);
 
   const sendMessage = () => {
     const message = text.current;
@@ -39,26 +39,28 @@ const TextBox = ({
     });
   };
 
+  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    text.current = e.currentTarget.value;
+
+    if (text.current.length > 0) {
+      const timestamp = new Date().getTime();
+      if (timestamp > lastInputChangeTimestamp.current + DELAY) {
+        lastInputChangeTimestamp.current = timestamp;
+        messageMutation.mutate({
+          message: "/typing",
+          roomId,
+          userId,
+        });
+      }
+    }
+  };
+
   return (
     <div className="flex ">
       <input
         ref={inputRef}
         type={"text"}
-        onChange={(e) => {
-          text.current = e.currentTarget.value;
-
-          if (text.current.length > 0) {
-            const timestamp = new Date().getTime();
-            if (timestamp > lastSent.current + DELAY) {
-              lastSent.current = timestamp;
-              messageMutation.mutate({
-                message: "/typing true",
-                roomId,
-                userId,
-              });
-            }
-          }
-        }}
+        onChange={onInputChange}
         className="flex flex-1 border-2 border-gray-400"
       />
       <button

@@ -30,8 +30,6 @@ export default function App() {
             </button>
           </header>
           <IndexPage setTheme={setTheme} />
-          {/* <div className="h-64 w-64 bg-customColor dark:bg-darkCustomColor"></div> */}
-          {/* <button onClick={() => setTheme((prev) => !prev)}>Change</button> */}
         </div>
       </QueryClientProvider>
     </trpc.Provider>

@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { observable, Observer } from "@trpc/server/observable";
 import { z } from "zod";
+import { isValidUrl } from "./utils/util";
 
 type ActionType =
   | "CHANGE_NICKNAME"
@@ -15,15 +16,6 @@ type PayloadType = { timer: number; url: string } | string;
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
-
-const isValidUrl = (url: string) => {
-  try {
-    new URL(url);
-    return true;
-  } catch (_) {
-    return false;
-  }
-};
 
 const roomEmits = new Map<
   string,
@@ -89,7 +81,6 @@ export const appRouter = t.router({
             action = "EDIT_LAST_MESSAGE";
             splitAction.shift();
             payload = splitAction.join(" ");
-            console.log(payload);
             if (!payload) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
@@ -101,13 +92,14 @@ export const appRouter = t.router({
 
           case "/countdown":
             action = "COUNTDOWN_URL";
-            if (!Number.isInteger(+splitAction[1])) {
+            const [_, timer, url] = splitAction;
+            if (!Number.isInteger(+timer)) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
-                message: "Enter a valid integer number",
+                message: "Enter a valid integer number!",
               });
             }
-            if (!isValidUrl(splitAction[2])) {
+            if (!isValidUrl(url)) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
                 message: "Enter a valid url!",
@@ -116,8 +108,7 @@ export const appRouter = t.router({
             roomEmitsArray = roomEmitsArray?.filter(
               (roomEmit) => roomEmit.userId !== userId
             );
-            splitAction.shift();
-            payload = { timer: +splitAction[0], url: splitAction[1] };
+            payload = { timer: +timer, url };
             break;
         }
       }
@@ -140,16 +131,6 @@ export const appRouter = t.router({
     .subscription(({ input }) => {
       const { roomId, userId } = input;
 
-      // if (connectedUsers.size >= MAX_USERS) {
-      //   throw new Error("The chat is full. Only 2 users are allowed.");
-      // }
-
-      // if (connectedUsers.has(roomId)) {
-      //   throw new Error(
-      //     "You are already connected from another window or device."
-      //   );
-      // }
-
       return observable<{
         payload: PayloadType;
         action: ActionType;
@@ -170,7 +151,6 @@ export const appRouter = t.router({
             );
             roomEmits.set(roomId, newRoomEmits);
           }
-          // roomEmits.delete(roomId);
           console.log(`User disconnected from room ${roomId}.`);
         };
       });

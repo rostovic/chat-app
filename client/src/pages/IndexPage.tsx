@@ -3,20 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { trpc } from "../trpc";
 import TextBox from "../components/TextBox";
 import notificationSound from "../assets/audio/notification.wav";
+import { generateRgbColor } from "../utils/util";
 const ROOM_ID = "1";
-
-const getRandomInt = (min: number, max: number) => {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-const generateRgbColor = (min: number, max: number) => {
-  return `rgb(${getRandomInt(min, max)}, ${getRandomInt(
-    min,
-    max
-  )}, ${getRandomInt(min, max)})`;
-};
 
 const IndexPage = ({
   setTheme,
@@ -38,7 +26,7 @@ const IndexPage = ({
     { roomId: ROOM_ID, userId },
     {
       onData: (data) => {
-        console.log(data);
+        // console.log(data);
         if (
           data.action === "DISPLAY_MESSAGE" ||
           data.action === "SPECIAL_STYLING"
@@ -115,7 +103,7 @@ const IndexPage = ({
               const newTime = prev.timer - 1;
               if (newTime <= 0) {
                 window.open(prev.url, "_blank")?.focus();
-                console.log(userId);
+                //console.log(userId);
                 if (countDownTimerRef.current) {
                   clearTimeout(countDownTimerRef.current);
                 }
