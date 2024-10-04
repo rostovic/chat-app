@@ -101,8 +101,9 @@ const IndexPage = ({
             setCountdown((prev) => {
               const newTime = prev.timer - 1;
               if (newTime <= 0) {
-                window.open(prev.url, "_blank")?.focus();
-                //console.log(userId);
+                window
+                  .open(prev.url, "_blank", "width=800,height=600")
+                  ?.focus();
                 if (countDownTimerRef.current) {
                   clearTimeout(countDownTimerRef.current);
                 }
