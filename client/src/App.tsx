@@ -19,16 +19,6 @@ export default function App() {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <div id="app-container">
-          <header className="flex h-16 justify-center align-middle bg-slate-700 dark:bg-gray-50">
-            <button
-              className="border-4 rounded-full px-4 my-2 text-gray-50 dark:text-slate-700 border-gray-50 dark:border-slate-700"
-              onClick={() =>
-                setTheme((prev) => (prev === "light" ? "dark" : "light"))
-              }
-            >
-              Change theme
-            </button>
-          </header>
           <IndexPage setTheme={setTheme} />
         </div>
       </QueryClientProvider>

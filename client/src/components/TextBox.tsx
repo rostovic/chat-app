@@ -25,6 +25,10 @@ const TextBox = ({
       text.current = "";
     }
 
+    if (message.length === 0) {
+      return;
+    }
+
     if (message === "/light") {
       setTheme("light");
       return;
@@ -55,23 +59,36 @@ const TextBox = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  };
+
   return (
-    <div className="flex ">
-      <input
-        ref={inputRef}
-        type={"text"}
-        onChange={onInputChange}
-        className="flex flex-1 border-2 border-gray-400"
-      />
-      <button
-        onClick={() => {
-          sendMessage();
-        }}
-        className="bg-white border-2 px-1 border-gray-400 font-bold text-green-700 "
-      >
-        Send
-      </button>
-      {messageMutation.isError && <p>{messageMutation.error.message}</p>}
+    <div className="flex flex-col">
+      {messageMutation.isError && (
+        <p className="text-red-500 font-bold align-middle m-1">
+          {messageMutation.error.message}
+        </p>
+      )}
+      <div className="flex">
+        <input
+          ref={inputRef}
+          type={"text"}
+          onChange={onInputChange}
+          onKeyDown={handleKeyDown}
+          className="flex flex-1 border-2 border-gray-400"
+        />
+        <button
+          onClick={() => {
+            sendMessage();
+          }}
+          className="border-2 border-gray-400 px-1 font-bold text-gray-400  bg-white  hover:bg-gray-400  hover:text-white"
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 };

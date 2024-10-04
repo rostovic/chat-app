@@ -26,7 +26,6 @@ const IndexPage = ({
     { roomId: ROOM_ID, userId },
     {
       onData: (data) => {
-        // console.log(data);
         if (
           data.action === "DISPLAY_MESSAGE" ||
           data.action === "SPECIAL_STYLING"
@@ -143,7 +142,7 @@ const IndexPage = ({
   };
 
   const showCountdown = () => {
-    if (countDown === null) {
+    if (countDown.url === "") {
       return;
     }
     return (
@@ -156,7 +155,7 @@ const IndexPage = ({
   return (
     <div className="flex flex-1 flex-col justify-center items-center gap-4 bg-gray-50 dark:bg-slate-700">
       {showCountdown()}
-      <div className="flex flex-col justify-end h-[600px] w-[40%] bg-gray-200 dark:bg-slate-900">
+      <div className="flex flex-col justify-end h-[700px] w-[50%] bg-gray-200 dark:bg-slate-900">
         <div
           className="flex flex-col p-1 gap-1 overflow-y-scroll"
           ref={scrollViewRef}

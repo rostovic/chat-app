@@ -46,12 +46,21 @@ export const appRouter = t.router({
       let action: ActionType = "DISPLAY_MESSAGE";
       let payload: PayloadType = message;
       let roomEmitsArray = roomEmits.get(roomId);
+
+      if (message.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Can not send empty message!",
+        });
+      }
+
       if (message.startsWith("/")) {
         const splitAction = message
           .split(" ")
           .filter((element) => element !== "");
+        const inputCommand = splitAction[0];
 
-        switch (splitAction[0]) {
+        switch (inputCommand) {
           case "/nick":
             action = "CHANGE_NICKNAME";
             splitAction.shift();
