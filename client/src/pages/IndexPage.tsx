@@ -64,10 +64,14 @@ const IndexPage = ({
 
         if (data.action === "EDIT_LAST_MESSAGE") {
           const newMessageArray = [...messagesArray];
+          const newMessage =
+            (data.payload as string)
+              .replaceAll(":)", "😊")
+              .replaceAll(";)", "😉") + " (edited)";
 
           for (let i = newMessageArray.length - 1; i >= 0; i--) {
             if (newMessageArray[i].userId === data.userId) {
-              newMessageArray[i].message = data.payload + " (edited)";
+              newMessageArray[i].message = newMessage;
               break;
             }
           }
