@@ -43,7 +43,9 @@ const IndexPage = ({
               color: data.action === "SPECIAL_STYLING" ? color : undefined,
             },
           ]);
-          audio.play();
+          if (data.userId !== userId) {
+            audio.play();
+          }
         }
 
         if (data.action === "CHANGE_NICKNAME" && data.userId !== userId) {
